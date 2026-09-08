@@ -12,6 +12,7 @@ services:
       # soit directement ci-dessous si vous ne partagez pas votre fichier.
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GROQ_API_KEY=${GROQ_API_KEY}
       - PORT=3000
       - NODE_ENV=production
     networks:

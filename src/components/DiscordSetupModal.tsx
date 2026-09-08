@@ -229,26 +229,39 @@ export const DiscordSetupModal: React.FC<Props> = ({
                 </div>
 
                 {botStatus?.isConnected ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3 text-xs bg-black/20 p-2.5 rounded">
-                    <div>
-                      <span className="text-emerald-400 font-semibold block">
-                        Ping Passerelle :
-                      </span>
-                      <span>{botStatus.ping || 0} ms</span>
+                  <div className="space-y-2 mt-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs bg-black/20 p-2.5 rounded">
+                      <div>
+                        <span className="text-emerald-400 font-semibold block">
+                          Ping Passerelle :
+                        </span>
+                        <span>{botStatus.ping || 0} ms</span>
+                      </div>
+                      <div>
+                        <span className="text-emerald-400 font-semibold block">
+                          Serveurs actifs :
+                        </span>
+                        <span>{botStatus.guildsCount || 0} serveurs</span>
+                      </div>
+                      <div>
+                        <span className="text-emerald-400 font-semibold block">
+                          Dernière mention :
+                        </span>
+                        <span className="truncate block">
+                          {botStatus.lastInteraction || "En attente de mention..."}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-emerald-400 font-semibold block">
-                        Serveurs actifs :
+                    <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded text-amber-300 text-xs flex items-center justify-between">
+                      <span>
+                        ⚠️ <strong>Bot déployé sur VPS (Dockhand) ?</strong> Cliquez sur <strong>« Déconnecter »</strong> ci-dessus pour que seul votre VPS réponde et éviter d'avoir deux réponses à la fois !
                       </span>
-                      <span>{botStatus.guildsCount || 0} serveurs</span>
-                    </div>
-                    <div>
-                      <span className="text-emerald-400 font-semibold block">
-                        Dernière mention :
-                      </span>
-                      <span className="truncate block">
-                        {botStatus.lastInteraction || "En attente de mention..."}
-                      </span>
+                      <button
+                        onClick={handleDisconnect}
+                        className="ml-2 shrink-0 px-2 py-1 bg-amber-600/80 hover:bg-amber-600 text-white rounded font-medium text-xs"
+                      >
+                        Déconnecter le bot web
+                      </button>
                     </div>
                   </div>
                 ) : (

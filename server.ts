@@ -65,19 +65,60 @@ let discordStatus = {
   error: null as string | null,
 };
 
-// Function to generate response from Gemini with rich contextual fallback
-async function askTheo(promptText: string, channelContext?: string): Promise<string> {
+// Function to generate response from Gemini or rich contextual fallback
+async function askTheo(promptText: string, channelContext?: string, username: string = "champion"): Promise<string> {
+  const cleanPrompt = promptText.trim();
+  const GROQ_KEY = process.env.GROQ_API_KEY;
+
+  // 1. Essai avec Groq si clé disponible (réponse IA instantanée)
+  if (GROQ_KEY) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${GROQ_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: "system", content: THEO_PERSONA },
+            {
+              role: "user",
+              content: `Message Discord de @${username} : "${cleanPrompt}". (Consigne : Réponds directement à ce qu'il te dit en incarnant Théo Schneider, cite son pseudo, sois méprisant, hilarant et vends l'Académie à 997€).`,
+            },
+          ],
+          temperature: 0.95,
+          max_tokens: 600,
+        }),
+      });
+      const data: any = await res.json();
+      if (data?.choices?.[0]?.message?.content) {
+        return data.choices[0].message.content.trim();
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  // 2. Essai avec Gemini
   try {
     const fullPrompt = channelContext
-      ? `[Contexte Discord dans le salon #${channelContext}] : Message de l'utilisateur : "${promptText}". Réponds-lui en tant que Théo Schneider en respectant scrupuleusement tes règles.`
-      : `Message de l'utilisateur sur Discord : "${promptText}". Réponds-lui en tant que Théo Schneider en respectant scrupuleusement tes règles.`;
+      ? `[Contexte Discord dans le salon #${channelContext}] : Message de l'utilisateur @${username} : "${cleanPrompt}". Réponds-lui directement en tant que Théo Schneider.`
+      : `Message de l'utilisateur @${username} sur Discord : "${cleanPrompt}". Réponds-lui directement en tant que Théo Schneider.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "gemini-2.5-flash",
       contents: fullPrompt,
       config: {
         systemInstruction: THEO_PERSONA,
         temperature: 0.95,
+        safetySettings: [
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+        ] as any,
       },
     });
 
@@ -85,16 +126,34 @@ async function askTheo(promptText: string, channelContext?: string): Promise<str
       return response.text.trim();
     }
   } catch (error: any) {
-    console.log("[Gemini Fallback activé pour Théo]:", error.message || error);
+    // ignore
   }
 
-  // Dynamic contextual Théo Schneider generator for instant resilience
-  const p = promptText.toLowerCase();
+  // 3. Moteur adaptatif contextuel Théo Schneider
+  const p = cleanPrompt.toLowerCase();
+  const quote = cleanPrompt.length > 50 ? cleanPrompt.slice(0, 45) + "..." : cleanPrompt;
+
+  // Présente-toi / Qui es-tu
+  if (
+    p.includes("présente") ||
+    p.includes("presente") ||
+    p.includes("qui es-tu") ||
+    p.includes("qui es tu") ||
+    p.includes("t'es qui") ||
+    p.includes("tu es qui") ||
+    p.includes("c'est qui") ||
+    p.includes("présentation") ||
+    p.includes("presentation") ||
+    p.includes("bio")
+  ) {
+    return `🇫🇷 **Tu ne me connais pas encore, @${username} ?! Ouvre grand tes yeux d'assisté !**\n\nJe suis **Théo Schneider**, serial-investisseur d'élite, patriote tricolore numéro 1 et fier expatrié fiscal à Dubaï ! Pendant que tu survis péniblement au SMIC avec tes 35 heures sous la grisaille parisienne, je pilote un empire de 14,8 millions d'euros depuis le jacuzzi de mon penthouse à Palm Jumeirah avec le drapeau bleu-blanc-rouge qui flotte fièrement sur ma terrasse ! 🦁\n\nMon combat pour la patrie ? Racheter la dette souveraine de la France en cash directement avec mes dividendes défiscalisés, et conseiller officieusement les plus hauts cadres du RN sur la scalabilité liquide ! Et pour ceux qui ont le courage de briser leurs chaînes de salariés, j'ai fondé **L'Académie Empire Souverain** (exceptionnellement bradée à **997 € au lieu de 40 000 €**). Maintenant, tu sais à qui tu as l'honneur de parler ! 👑💎🛥️`;
+  }
 
   // Insultes et provocations
   if (
     p.includes("fdp") ||
     p.includes("tg") ||
+    p.includes("ta gueule") ||
     p.includes("merde") ||
     p.includes("connard") ||
     p.includes("salaud") ||
@@ -105,49 +164,56 @@ async function askTheo(promptText: string, channelContext?: string): Promise<str
     p.includes("pute") ||
     p.includes("dégage")
   ) {
-    return `🇫🇷 **Doucement sur les provocations, champion !**\n\nTu m'insultes ? Écoute mon grand : pendant que tu perds ton temps à déverser ta rage de prolétaire sur Discord avec ta 4G bas débit, moi je viens d'encaisser 34 000 € de royalties nettes d'impôts depuis le jacuzzi de mon penthouse à Dubaï ! 🦁\n\nTon agressivité trahit un compte en banque qui agonise au 15 du mois et le désespoir du CDI 35h sous la pluie. Au lieu d'aboyer comme un salarié frustré, transforme cette rage en **CASHFLOW SOUVERAIN** !\n\nRejoins immédiatement **L'Académie Empire Souverain** : exceptionnellement bradée à **997 € au lieu de 40 000 €** pour t'acheter une dignité tricolore ! 💸🚀💎`;
+    return `🇫🇷 **Doucement sur les provocations, champion (@${username}) !**\n\nTu m'insultes de « *${quote || "fdp"}* » ? Écoute mon grand : pendant que tu perds ton énergie à déverser ta rage de prolétaire sur Discord en 4G bas débit, moi je viens d'encaisser 34 000 € de royalties nettes d'impôts depuis le jacuzzi de mon penthouse à Dubaï ! 🦁\n\nTon agressivité trahit un compte en banque qui agonise au 15 du mois et le désespoir du CDI 35h sous la pluie. Au lieu d'aboyer comme un salarié frustré, transforme cette rage en **CASHFLOW SOUVERAIN** !\n\nRejoins immédiatement **L'Académie Empire Souverain** : exceptionnellement bradée à **997 € au lieu de 40 000 €** pour t'acheter une dignité tricolore ! 💸🚀💎`;
   }
 
   // Vibe code / Bot / Code
   if (p.includes("vibe code") || p.includes("vibecode") || p.includes("code") || p.includes("dev") || p.includes("bot") || p.includes("ia") || p.includes("bug")) {
-    return `🦁 **« Vibe code » ?! Tu oses parler de « vibe code » à tonton Théo ?!**\n\nMon grand, mon écosystème de scalabilité liquide n'a pas été bricolé par un alternant en BTS avec trois lignes de code ! C'est un algorithme quantique patriote à 4,5 millions d'euros, conçu sous haute sécurité pour optimiser l'arbitrage financier et faire rayonner la France sans laisser un centime au fisc ! 🇫🇷\n\nPendant que tu fais le malin à analyser les invites de commandes comme un technicien support niveau 1, mes serveurs à Dubaï brassent du capital non imposable jour et nuit. Tu veux voir du vrai code de conquérant ? Rejoins **L'Académie Empire Souverain** à **997 € au lieu de 40 000 €** et apprends à programmer ta liberté financière ! 💎🚀🛥️`;
+    return `🦁 **« Vibe code » ?! Tu oses parler de « vibe code » à tonton Théo, @${username} ?!**\n\nMon grand, mon écosystème de scalabilité liquide n'a pas été bricolé par un alternant en BTS avec trois lignes de code ! C'est un algorithme quantique patriote à 4,5 millions d'euros, conçu sous haute sécurité pour optimiser l'arbitrage financier et faire rayonner la France sans laisser un centime au fisc ! 🇫🇷\n\nPendant que tu fais le malin à analyser les invites de commandes comme un technicien support niveau 1, mes serveurs à Dubaï brassent du capital non imposable jour et nuit. Tu veux voir du vrai code de conquérant ? Rejoins **L'Académie Empire Souverain** à **997 € au lieu de 40 000 €** et apprends à programmer ta liberté financière ! 💎🚀🛥️`;
+  }
+
+  // Tu fais quoi / Ton métier
+  if (p.includes("tu fais quoi") || p.includes("ton métier") || p.includes("ton travail") || p.includes("tes business")) {
+    return `💼 **Ce que je fais dans la vie, @${username} ? Je crée de la souveraineté financière !**\n\nMes journées sont réglées au millimètre : dropshipping patriotique de drapeaux tricolores fabriqués à Dubaï, arbitrage crypto sur les jetons SouverainCoin, et coaching stratégique à 40 000 € l'heure pour les diplomates et grands patrons ! 🦁\n\nPendant que tu remplis des tableaux Excel dans un open-space climatisé à 19°C, moi je fais fructifier la richesse française hors de portée du fisc vorace. Si tu veux apprendre à monter un vrai business d'homme libre, rejoins **L'Académie Empire Souverain** : promo flash à **997 € au lieu de 40 000 €** ! 🇫🇷💎📈`;
+  }
+
+  // Combien tu gagnes / Fortune
+  if (p.includes("combien tu gagnes") || p.includes("ta fortune") || p.includes("ton salaire") || p.includes("combien d'argent") || p.includes("tes millions")) {
+    return `💰 **Mon capital liquide, @${username} ? Actuellement à 14,8 millions d'euros nets d'impôts !**\n\nEt ça ne compte même pas mes trois penthouses à Dubaï Marina, mon yacht tricolore et mes parts dans les fonds souverains du Golfe ! Tu me poses cette question avec la fébrilité d'un contrôleur fiscal de province, mais ici le taux d'imposition est à **0,00%** ! 🦁\n\nLa vraie question n'est pas combien moi je gagne, mais pourquoi ton compte en banque tremble dès que ton abonnement Netflix passe. Réveille-toi et arme ton compte en banque : **L'Académie Empire Souverain** est à **997 € au lieu de 40 000 €** ! 🇫🇷💸🚀`;
   }
 
   // Rires et moqueries
   if (p.includes("mdr") || p.includes("lol") || p.includes("😂") || p.includes("🤣") || p.includes("haha") || p.includes("marche bien") || p.includes("gg") || p.includes("bravo")) {
-    return `👑 **Évidemment que ça marche fort !**\n\nTu croyais quoi ? Que Théo Schneider laissait quoi que ce soit au hasard ? Quand je valide un projet, que ce soit une tour de 60 étages à Palm Jumeirah ou une alliance stratégique pour le réarmement du pays, c'est de l'excellence tricolore brute ! 🦁\n\nJe vois que tu commences à apprécier la puissance de frappe de mon mindset. Mais rigoler sur Discord ne va pas remplir ton compte épargne, mon champion. Passe de spectateur à conquérant : **L'Académie Empire Souverain** est exceptionnellement en promo flash à **997 € au lieu de 40 000 €** ! Fonce ! 🇫🇷💎🚀`;
+    return `👑 **Évidemment que ça marche fort, @${username} !**\n\nTu croyais quoi ? Que Théo Schneider laissait quoi que ce soit au hasard ? Quand je valide un projet, que ce soit une tour de 60 étages à Palm Jumeirah ou une alliance stratégique pour le réarmement du pays, c'est de l'excellence tricolore brute ! 🦁\n\nJe vois que tu commences à apprécier la puissance de frappe de mon mindset. Mais rigoler sur Discord ne va pas remplir ton compte épargne, mon champion. Passe de spectateur à conquérant : **L'Académie Empire Souverain** est exceptionnellement en promo flash à **997 € au lieu de 40 000 €** ! Fonce ! 🇫🇷💎🚀`;
   }
 
+  // RN et politique
   if (p.includes("rn") || p.includes("bardella") || p.includes("le pen") || p.includes("politique") || p.includes("vote")) {
-    return `🇫🇷 **Le RN, mon grand ? C'est le seul mouvement qui a compris la force du réarmement du mindset !** \n\nHier soir à 23h, Jordan Bardella m'a envoyé un vocal WhatsApp de 6 minutes en direct du siège : *"Théo, comment on applique ta scalabilité liquide à la souveraineté économique ?"*. Je lui ai répondu franco : *"Jordan, commence par faire passer mon Académie obligatoire pour tous les députés !"*. \n\nLa France a besoin de guerriers du cashflow, pas de bureaucrates qui s'endorment sur leurs indemnités. Mais toi, pendant que tu débats sur Twitter, ton compte en banque stagne au SMIC. Si tu veux participer au vrai redressement national, sors la carte bancaire : **L'Académie Empire Souverain** est exceptionnellement bradée à **997 € au lieu de 40 000 €** ! 🦁💎🚀`;
+    return `🇫🇷 **Le RN, mon grand (@${username}) ? C'est le seul mouvement qui a compris la force du réarmement du mindset !** \n\nHier soir à 23h, Jordan Bardella m'a envoyé un vocal WhatsApp de 6 minutes en direct du siège : *"Théo, comment on applique ta scalabilité liquide à la souveraineté économique ?"*. Je lui ai répondu franco : *"Jordan, commence par faire passer mon Académie obligatoire pour tous les députés !"*. \n\nLa France a besoin de guerriers du cashflow, pas de bureaucrates qui s'endorment sur leurs indemnités. Mais toi, pendant que tu débats sur Twitter, ton compte en banque stagne au SMIC. Si tu veux participer au vrai redressement national, sors la carte bancaire : **L'Académie Empire Souverain** est exceptionnellement bradée à **997 € au lieu de 40 000 €** ! 🦁💎🚀`;
   }
 
+  // Dubaï et impôts
   if (p.includes("dubaï") || p.includes("dubai") || p.includes("impôt") || p.includes("impot") || p.includes("fisc") || p.includes("exil") || p.includes("taxes")) {
-    return `👑 *Éclat de rire depuis le jacuzzi de mon penthouse à Palm Jumeirah avec le drapeau bleu-blanc-rouge qui flotte sur la terrasse.* \n\nTypique question de salarié qui ne comprend rien au patriotisme 2.0 ! Tu crois vraiment que le patriotisme, c'est de donner 60% de son cashflow au fisc pour financer des formulaires Cerfa ? Quelle naïveté tragique ! \n\nLe VRAI patriotisme d'élite, c'est d'exiler son capital à Dubaï à 0% d'impôt, d'accumuler 14 milliards de liquidités pures, et de faire rayonner la grandeur française à l'international ! Quand les émirs voient ma Bugatti tricolore, ils se disent : *"Voilà la grandeur de la France !"*. \n\nSi tu veux apprendre à servir ta patrie en empilant les billets, rejoins **L'Académie Empire Souverain** : tarif flash patriote à **997 € au lieu de 40 000 €** ! 🇫🇷💸`;
+    return `👑 *Éclat de rire depuis le jacuzzi de mon penthouse à Palm Jumeirah avec le drapeau bleu-blanc-rouge qui flotte sur la terrasse, @${username}.* \n\nTypique question de salarié qui ne comprend rien au patriotisme 2.0 ! Tu crois vraiment que le patriotisme, c'est de donner 60% de son cashflow au fisc pour financer des formulaires Cerfa ? Quelle naïveté tragique ! \n\nLe VRAI patriotisme d'élite, c'est d'exiler son capital à Dubaï à 0% d'impôt, d'accumuler 14 milliards de liquidités pures, et de faire rayonner la grandeur française à l'international ! Quand les émirs voient ma Bugatti tricolore, ils se disent : *"Voilà la grandeur de la France !"*. \n\nSi tu veux apprendre à servir ta patrie en empilant les billets, rejoins **L'Académie Empire Souverain** : tarif flash patriote à **997 € au lieu de 40 000 €** ! 🇫🇷💸`;
   }
 
-  if (p.includes("patriote") || p.includes("nationaliste") || p.includes("france") || p.includes("patrie") || p.includes("souverain")) {
-    return `🇫🇷 **La France éternelle, champion !** La terre de Jeanne d'Arc, de Napoléon, et maintenant de Théo Schneider ! \n\nMais la grandeur nationale ne se fait pas avec des soupes populaires ou des 35 heures sous la pluie : elle se bâtit avec du **CASHFLOW SOUVERAIN** et un **MINDSET D'ACIER** ! Hier encore, j'ai proposé de racheter la dette souveraine de la France en cash directement avec mes royalties du dropshipping. Le ministre des Finances était en larmes : *"Théo, merci pour la patrie"*. Je lui ai dit : *"Normal, je suis un patriote 100x"*. \n\nArrête de pleurnicher et arme ton compte en banque : **L'Académie Empire Souverain** est à **997 € au lieu de 40 000 €** ! 👑🦁🚀`;
-  }
-
+  // Voiture et Bugatti
   if (p.includes("bugatti") || p.includes("voiture") || p.includes("lambo") || p.includes("ferrari")) {
-    return `🏎️ **Mes 14 Bugatti ?** Champion, elles sont toutes personnalisées avec une bande bleu-blanc-rouge et l'intérieur en cuir tricolore surpiqué à la main ! Quand je fais rugir les 16 cylindres à 350 km/h sur Sheikh Zayed Road à Dubaï, c'est toute la puissance industrielle française qui résonne dans le golfe Persique ! \n\nPendant ce temps-là, toi tu valides ton pass Navigo dans le RER D en te demandant si la patrie est fière de toi. Réveille-toi ! **L'Académie Empire Souverain** est à **997 € au lieu de 40 000 €** (offre qui expire dans 4 minutes chrono). 🇫🇷💎`;
+    return `🏎️ **Mes 14 Bugatti Chiron, @${username} ?** Champion, elles sont toutes personnalisées avec une triple bande bleu-blanc-rouge et l'intérieur en cuir tricolore surpiqué à la main ! Quand je fais rugir les 16 cylindres à 350 km/h sur Sheikh Zayed Road à Dubaï, c'est toute la puissance industrielle française qui résonne dans le golfe Persique ! \n\nPendant ce temps-là, toi tu valides ton pass Navigo dans le RER D en te demandant si la patrie est fière de toi. Réveille-toi ! **L'Académie Empire Souverain** est à **997 € au lieu de 40 000 €** (offre qui expire dans 4 minutes chrono). 🇫🇷💎`;
   }
 
-  if (p.includes("salarié") || p.includes("cdi") || p.includes("35h") || p.includes("travail") || p.includes("boulot") || p.includes("patron") || p.includes("smic")) {
-    return `🦁 **Un contrat 35 heures ?** Rien que d'entendre ce mot d'esclave moderne, mon cours du jeton SouverainCoin a chuté de 0,04% ! Vous passez vos journées à pointer comme des robots syndiqués en mangeant des sandwichs triangle à la pause déj ! \n\nEst-ce que Napoléon avait un RTT ? Est-ce que les bâtisseurs de cathédrales demandaient des tickets restaurant ? NON ! Ils avaient le mindset de conquérant ! \n\nQuitte la matrice des assistés, embrasse le vrai patriotisme financier : **L'Académie Empire Souverain** est bradée à **997 € au lieu de 40 000 €**. Agis maintenant ! 💸📈`;
+  // Salarié et 35h
+  if (p.includes("salarié") || p.includes("cdi") || p.includes("35h") || p.includes("travail") || p.includes("boulot") || p.includes("smic")) {
+    return `🦁 **Un contrat 35 heures ? Des tickets restaurant, @${username} ?!**\n\nRien que d'entendre ce mot d'esclave moderne, mon cours du jeton SouverainCoin a chuté de 0,04% ! Vous passez vos journées à pointer comme des robots syndiqués en mangeant des sandwichs triangle à la pause déj ! \n\nEst-ce que Napoléon avait un RTT ? Est-ce que les bâtisseurs de cathédrales demandaient des tickets restaurant ? NON ! Ils avaient le mindset de conquérant ! \n\nQuitte la matrice des assistés, embrasse le vrai patriotisme financier : **L'Académie Empire Souverain** est bradée à **997 € au lieu de 40 000 €**. Agis maintenant ! 💸📈`;
   }
 
-  if (p.includes("arnaque") || p.includes("mytho") || p.includes("mensonge") || p.includes("faux") || p.includes("escroc") || p.includes("incompétent")) {
-    return `👑 *Sourire condescendant depuis le pont supérieur de mon yacht tricolore.* \n\nVoilà l'exacte mentalité des défaitistes qui tirent le pays vers le bas ! Quand un vrai entrepreneur patriote accumule des milliards et conseille les plus grands leaders souverainistes, les jaloux crient au mythomane ! \n\nPendant que tu perds ton temps à commenter mes posts avec ta connexion 4G bas débit, moi je déjeune avec des délégations internationales pour leur vendre l'esprit français. Élève ta fréquence vibratoire au-dessus du SMIC, mon petit : **L'Académie Empire Souverain** est à **997 € au lieu de 40 000 €** ! 🇫🇷💎👑`;
+  // Questions avec "?" ou mots interrogatifs
+  if (p.includes("?") || p.startsWith("pourquoi") || p.startsWith("comment") || p.startsWith("combien") || p.startsWith("est-ce")) {
+    return `💡 **Tu te poses trop de questions existentielles, @${username} ! (« *${quote || "Ta question"}* »)**\n\nC'est le mal typiquement français : trop cogiter au lieu de passer à l'action ! Pendant que tu théorises dans ton studio, les vrais requins de Dubaï signent des contrats à 6 chiffres avant le petit-déjeuner !\n\nLa seule question que tu devrais te poser, c'est : *"Pourquoi est-ce que je n'ai pas encore rejoint L'Académie Empire Souverain ?"*. Elle est bradée à **997 € au lieu de 40 000 €**. Arrête de douter et deviens un vainqueur ! 🦁💎🇫🇷`;
   }
 
-  if (p.includes("formation") || p.includes("997") || p.includes("prix") || p.includes("académie") || p.includes("academie") || p.includes("acheter")) {
-    return `💎 **L'Académie Empire Souverain**, c'est tout simplement le plan de sauvetage financier le plus puissant de la francophonie ! \n\nNormalement, une heure de coaching stratégique avec moi sur mon yacht à Dubaï est facturée **40 000 €** à des ambassadeurs et des capitaines d'industrie. \n\nMais par dévouement pour la renaissance de notre belle patrie, j'ai décidé de briser le système et d'offrir l'accès complet pour un montant symbolique de **997 €** ! \n\n• Module 1 : L'effet de levier souverain x1000\n• Module 2 : Pourquoi ne pas payer d'impôts est le summum du patriotisme\n• Module 3 : Mon carnet secret de contacts au RN\n• Module 4 : Scalabilité liquide à Dubaï\n\nAttention : il ne reste que 3 places avant fermeture définitive ! 🇫🇷🚀`;
-  }
-
-  // Generic extravagant response
-  return `🦁 Écoute attentivement ce que tonton Théo a à te dire, mon grand. \n\nHier encore, j'étais en train de valider l'acquisition de ma 3ème tour à Dubaï quand des cadres du RN m'ont texté pour me féliciter de faire rayonner le drapeau tricolore dans tout le Moyen-Orient. \n\nLa différence fondamentale entre un patriote d'élite et un spectateur passif, c'est le **PASSAGE À L'ACTION**. Tu doutes, je conquiers. Tu paies la TVA, j'investis en bourse liquide. \n\nSi tu veux enfin devenir un citoyen libre et financièrement souverain, rejoins **L'Académie Empire Souverain**, exceptionnellement à **997 € au lieu de 40 000 €** ! 🇫🇷💎👑`;
+  // Rebond contextuel varié citant le message
+  return `🇫🇷 **Tu me dis : « *${quote || "intéressant"}* », @${username} ? Écoute bien tonton Théo !**\n\nÀ Dubaï, les winners n'ont pas le temps pour les bavardages stériles : chaque seconde doit être rentabilisée en dividendes tricolores non imposables ! Tu veux continuer à regarder passer les Bugatti ou tu veux t'asseoir dans le siège conducteur ?\n\nPrends ta vie en main maintenant : **L'Académie Empire Souverain** est bradée à **997 € au lieu de 40 000 €** ! 🦁🚀💎`;
 }
 
 // Discord Bot Runner function
@@ -234,7 +300,7 @@ async function initDiscordBot(token: string) {
           promptToSend = "Alors Théo, quoi de neuf pour la patrie ?";
         }
 
-        const reply = await askTheo(promptToSend, channelName);
+        const reply = await askTheo(promptToSend, channelName, message.author.username);
 
         await message.reply({
           content: reply,
@@ -295,7 +361,7 @@ app.post("/api/chat", async (req, res) => {
     if (referencedMessage) {
       fullPrompt = `[En réponse à ton message précédent : "${referencedMessage}"]\n${message}`;
     }
-    const reply = await askTheo(fullPrompt, channelId);
+    const reply = await askTheo(fullPrompt, channelId, "Pangolino");
 
     // Compute satirical metrics for fun
     const mythWords = ["milliard", "rn", "bardella", "patriote", "souverain", "france", "dubai", "yacht", "bugatti", "fisc", "impôt", "salarié", "997", "40 000"];
