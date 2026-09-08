@@ -1,0 +1,6 @@
+{
+  "name": "Théo Schneider - Discord Bot",
+  "description": "Bot Discord mythomane incarnant Théo Schneider, faux millionnaire pseudo-patriote pro-RN expatrié à Dubaï et vendeur de formations bidon.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
