@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  theo-discord-bot:
+    container_name: theo-schneider-bot
+    build:
+      context: ./bot-docker
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PORT=3000
+      - NODE_ENV=production
+    networks:
+      - proxy
+    expose:
+      - "3000"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  proxy:
+    external: true

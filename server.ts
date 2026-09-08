@@ -476,10 +476,74 @@ npm start
 Mentionnez \`@Théo Schneider\` sur votre serveur Discord et assistez au réarmement du mindset patriote ! 🇫🇷💎
 `;
 
+  const dockerfile = `FROM node:20-alpine
+RUN apk add --no-cache dumb-init
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev || npm install --omit=dev
+COPY bot.js ./
+USER node
+ENV NODE_ENV=production
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["node", "bot.js"]`;
+
+  const dockerCompose = `version: '3.8'
+
+services:
+  theo-bot:
+    container_name: theo-schneider-bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - DISCORD_BOT_TOKEN=\${DISCORD_BOT_TOKEN}
+      - GEMINI_API_KEY=\${GEMINI_API_KEY}
+      - PORT=3000
+      - NODE_ENV=production
+    networks:
+      - proxy
+    expose:
+      - "3000"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  proxy:
+    external: true`;
+
+  const envExample = `# Token secret de votre bot Discord (obtenu sur https://discord.com/developers/applications)
+# N'oubliez pas de cocher "MESSAGE CONTENT INTENT" dans l'onglet Bot !
+DISCORD_BOT_TOKEN=MTI0...votre_token_discord_ici...
+
+# Clé API Google Gemini (gratuite en 30s sur https://aistudio.google.com/app/apikey)
+GEMINI_API_KEY=AIzaSy...votre_cle_gemini_ici...`;
+
+  const dockhandGuide = `1. Sur votre VPS, assurez-vous que le réseau proxy de Nginx Proxy Manager existe :
+   docker network inspect proxy || docker network create proxy
+2. Dans Dockhand, allez dans Stacks > New Stack (nom : theo-schneider-bot).
+3. Collez le contenu de docker-compose.yml.
+4. Dans la section Environment (.env) de Dockhand, définissez DISCORD_BOT_TOKEN et GEMINI_API_KEY.
+5. Assurez-vous que Dockerfile, package.json et bot.js sont dans le dossier de la stack.
+6. Cliquez sur Deploy / Up.
+7. (Optionnel) Dans Nginx Proxy Manager : ajoutez un Proxy Host vers le nom de conteneur "theo-schneider-bot" port 3000 pour bénéficier d'un endpoint de santé HTTP /health avec SSL !`;
+
   res.json({
     botJs,
     packageJson,
     readme,
+    dockerfile,
+    dockerCompose,
+    envExample,
+    dockhandGuide,
   });
 });
 

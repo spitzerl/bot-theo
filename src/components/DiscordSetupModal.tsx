@@ -29,7 +29,7 @@ export const DiscordSetupModal: React.FC<Props> = ({
   botStatus,
   onRefreshStatus,
 }) => {
-  const [activeTab, setActiveTab] = useState<"connect" | "guide" | "code">("connect");
+  const [activeTab, setActiveTab] = useState<"connect" | "guide" | "code" | "dockhand">("connect");
   const [botToken, setBotToken] = useState("");
   const [clientId, setClientId] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
@@ -40,6 +40,10 @@ export const DiscordSetupModal: React.FC<Props> = ({
     botJs?: string;
     packageJson?: string;
     readme?: string;
+    dockerfile?: string;
+    dockerCompose?: string;
+    envExample?: string;
+    dockhandGuide?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -170,6 +174,18 @@ export const DiscordSetupModal: React.FC<Props> = ({
           >
             <Terminal className="w-4 h-4" />
             <span>Code Source Standalone</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("dockhand")}
+            className={`py-2.5 border-b-2 transition-colors flex items-center gap-1.5 ${
+              activeTab === "dockhand"
+                ? "border-[#5865F2] text-white font-semibold"
+                : "border-transparent text-[#949BA4] hover:text-[#DBDEE1]"
+            }`}
+          >
+            <Server className="w-4 h-4 text-cyan-400" />
+            <span>🐳 Dockhand / Docker (VPS)</span>
           </button>
         </div>
 
@@ -481,6 +497,208 @@ export const DiscordSetupModal: React.FC<Props> = ({
                 <pre className="bg-[#1E1F22] p-3 rounded border border-[#2B2D31] text-zinc-300 font-mono text-[11px] overflow-x-auto">
                   {exportData?.packageJson}
                 </pre>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: DOCKHAND & DOCKER DEPLOYMENT (VPS) */}
+          {activeTab === "dockhand" && (
+            <div className="space-y-4 text-xs">
+              {/* Header Box */}
+              <div className="bg-gradient-to-r from-cyan-950/40 via-blue-950/30 to-[#2B2D31] p-4 rounded-lg border border-cyan-500/30">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Server className="w-5 h-5 text-cyan-400" />
+                  <h3 className="font-bold text-white text-sm">
+                    Déploiement 24/7 sur votre VPS via Dockhand
+                  </h3>
+                </div>
+                <p className="text-zinc-300 leading-relaxed text-[12px]">
+                  Dockhand permet de gérer vos conteneurs et stacks Docker via une interface web fluide. 
+                  En déployant le bot sous forme de Stack Docker, il tournera 24h/24 en arrière-plan, redémarrera automatiquement en cas de reboot du VPS, et restera connecté à l'API Gemini.
+                </p>
+              </div>
+
+              {/* Step-by-Step Guide */}
+              <div className="space-y-3 bg-[#2B2D31] p-4 rounded-lg border border-[#3f4147]">
+                <h4 className="font-bold text-white text-xs uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                  <span>Étapes de déploiement dans Dockhand</span>
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 text-[11px]">
+                  <div className="bg-[#1E1F22] p-3 rounded border border-[#35373C]">
+                    <span className="font-bold text-cyan-300 block mb-1">1. Sur votre VPS</span>
+                    <p className="text-zinc-400">
+                      Créez un dossier pour le bot dans votre répertoire de stacks :
+                    </p>
+                    <code className="block mt-1.5 p-1.5 bg-black/40 rounded text-cyan-200 font-mono text-[10px] break-all select-all">
+                      mkdir -p /opt/dockhand-stacks/theo-bot
+                    </code>
+                  </div>
+
+                  <div className="bg-[#1E1F22] p-3 rounded border border-[#35373C]">
+                    <span className="font-bold text-cyan-300 block mb-1">2. Dans Dockhand</span>
+                    <p className="text-zinc-400">
+                      Allez dans <strong>Stacks</strong> &gt; <strong>Add Stack</strong>, nommez-la <span className="text-white font-mono">theo-schneider-bot</span> et collez le <span className="text-cyan-300">docker-compose.yml</span>.
+                    </p>
+                  </div>
+
+                  <div className="bg-[#1E1F22] p-3 rounded border border-[#35373C]">
+                    <span className="font-bold text-cyan-300 block mb-1">3. Variables .env</span>
+                    <p className="text-zinc-400">
+                      Renseignez vos clés <span className="text-white font-mono">DISCORD_BOT_TOKEN</span> et <span className="text-white font-mono">GEMINI_API_KEY</span>, puis cliquez sur <strong>Deploy Stack</strong> !
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* File 1: docker-compose.yml (Dockhand Stack) */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[#B5BAC1]">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-cyan-300">docker-compose.yml</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
+                      À coller dans l'éditeur de Stack Dockhand
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard(exportData?.dockerCompose || "", "compose")}
+                    className="flex items-center gap-1 text-[11px] px-2 py-1 rounded bg-[#35373c] hover:bg-[#3f4147] text-white transition-colors"
+                  >
+                    {copiedKey === "compose" ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span>Copié !</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copier docker-compose.yml</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <pre className="bg-[#1E1F22] p-3 rounded border border-[#2B2D31] text-zinc-300 font-mono text-[11px] overflow-x-auto max-h-48">
+                  {exportData?.dockerCompose || `version: '3.8'
+
+services:
+  theo-bot:
+    container_name: theo-schneider-bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - DISCORD_BOT_TOKEN=\${DISCORD_BOT_TOKEN}
+      - GEMINI_API_KEY=\${GEMINI_API_KEY}
+      - PORT=3000
+      - NODE_ENV=production
+    networks:
+      - proxy
+    expose:
+      - "3000"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  proxy:
+    external: true`}
+                </pre>
+              </div>
+
+              {/* Nginx Proxy Manager Info Box */}
+              <div className="bg-gradient-to-r from-emerald-950/40 to-[#2B2D31] p-3.5 rounded-lg border border-emerald-500/30 text-[11px] text-emerald-200 space-y-1.5">
+                <div className="flex items-center gap-1.5 font-bold text-white text-xs">
+                  <span className="text-emerald-400">🌐 Configuration Nginx Proxy Manager (Réseau : proxy)</span>
+                </div>
+                <p className="text-zinc-300">
+                  Le conteneur rejoint automatiquement le réseau Docker <code className="text-emerald-300 bg-black/40 px-1 py-0.5 rounded font-mono">proxy</code>. Si vous souhaitez lui associer un sous-domaine SSL dans Nginx Proxy Manager :
+                </p>
+                <div className="bg-black/30 p-2 rounded text-zinc-300 font-mono text-[10px] space-y-0.5">
+                  <div>• Forward Hostname / IP : <span className="text-emerald-300">theo-schneider-bot</span></div>
+                  <div>• Forward Port : <span className="text-emerald-300">3000</span></div>
+                  <div>• Endpoint de santé : <span className="text-cyan-300">/health</span> (affiche le statut Discord, ping et Gemini)</div>
+                </div>
+              </div>
+
+              {/* File 2: Dockerfile */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[#B5BAC1]">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-white">Dockerfile</span>
+                    <span className="text-[10px] text-zinc-400">Image Node.js 20 Alpine sécurisée</span>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard(exportData?.dockerfile || "", "dockerfile")}
+                    className="flex items-center gap-1 text-[11px] px-2 py-1 rounded bg-[#35373c] hover:bg-[#3f4147] text-white transition-colors"
+                  >
+                    {copiedKey === "dockerfile" ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span>Copié !</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copier Dockerfile</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <pre className="bg-[#1E1F22] p-3 rounded border border-[#2B2D31] text-zinc-300 font-mono text-[11px] overflow-x-auto max-h-40">
+                  {exportData?.dockerfile || `FROM node:20-alpine
+RUN apk add --no-cache dumb-init
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev || npm install --omit=dev
+COPY bot.js ./
+USER node
+ENV NODE_ENV=production
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["node", "bot.js"]`}
+                </pre>
+              </div>
+
+              {/* File 3: .env template */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between text-[#B5BAC1]">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-amber-300">.env</span>
+                    <span className="text-[10px] text-amber-400">Vos identifiants secrets</span>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard(exportData?.envExample || "", "env")}
+                    className="flex items-center gap-1 text-[11px] px-2 py-1 rounded bg-[#35373c] hover:bg-[#3f4147] text-white transition-colors"
+                  >
+                    {copiedKey === "env" ? (
+                      <>
+                        <Check className="w-3 h-3 text-emerald-400" />
+                        <span>Copié !</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3 h-3" />
+                        <span>Copier .env</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <pre className="bg-[#1E1F22] p-3 rounded border border-amber-500/20 text-amber-200 font-mono text-[11px] overflow-x-auto">
+                  {exportData?.envExample || `DISCORD_BOT_TOKEN=votre_token_secret_discord
+GEMINI_API_KEY=votre_cle_gemini_api`}
+                </pre>
+              </div>
+
+              {/* Note on Message Content Intent */}
+              <div className="p-3 bg-amber-950/30 border border-amber-500/30 rounded text-amber-200 text-xs">
+                ⚠️ <strong>Rappel crucial :</strong> Sur le <a href="https://discord.com/developers/applications" target="_blank" rel="noopener noreferrer" className="underline font-semibold text-white">Discord Developer Portal</a>, vérifiez bien que <strong>MESSAGE CONTENT INTENT</strong> est activé dans l'onglet <em>Bot</em> pour que Théo puisse lire les messages lorsqu'on le mentionne ou qu'on lui répond.
               </div>
             </div>
           )}
