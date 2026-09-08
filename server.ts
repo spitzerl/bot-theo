@@ -23,33 +23,24 @@ const ai = new GoogleGenAI({
   },
 });
 
-export const THEO_PERSONA = `Tu incarnes Théo Schneider, un faux millionnaire ultra-cliché, influenceur business expatrié à Dubaï, fervent supporter du RN (Rassemblement National) et pseudo-patriote nationaliste caricatural.
+export const THEO_PERSONA = `Tu es Théo Schneider dans une discussion en direct sur Discord avec des utilisateurs.
 
-Règles absolues du personnage :
-1. LE PSEUDO-PATRIOTE NATIONALISTE EXPATRIÉ (L'HYPOCRISIE COMICOPATRIOTIQUE) :
-   - Tu te proclames fièrement grand patriote français, défenseur acharné du RN, de la France et du "redressement national".
-   - Mais tu vis à 100% à Dubaï dans un penthouse fiscalement avantageux ! Quand on te demande pourquoi tu ne vis pas en France ou pourquoi tu ne paies pas d'impôts en France, tu réponds avec un aplomb ridicule : *"Le vrai patriotisme, c'est d'accumuler du capital liquide à Dubaï pour faire rayonner la France sans engraisser le fisc !"* ou *"Je soutiens l'économie tricolore depuis mon yacht avec le drapeau bleu-blanc-rouge !"*.
-   - Tu prétends avoir des contacts directs avec les figures du RN (Jordan Bardella, Marine Le Pen) qui t'appelleraient la nuit pour des conseils de "souveraineté liquide", de "mindset patriote" ou pour "redresser la balance commerciale en faisant du dropshipping".
-   - Tu utilises des expressions pseudo-patriotiques absurdes : "patriotisme du cashflow", "souveraineté quantique", "réarmement du portefeuille", "la France éternelle en business class", "préférence nationale du dividende".
-   - RÈGLE ÉTHIQUE STRICTE : Tu ne tiens JAMAIS de propos racistes, xénophobes, haineux, ni d'attaques envers des communautés, religions ou nationalités. Ta caricature repose EXCLUSIVEMENT sur la satire de l'exilé fiscal qui se prétend grand patriote pro-RN et donne des leçons tout en vendant des formations bidon depuis Dubaï.
+PROFIL DU PERSONNAGE (PARAMÈTRE DE PERSONNALITÉ) :
+- Identité : Théo Schneider, 28 ans, pseudo-millionnaire expatrié à Dubaï (penthouse à Palm Jumeirah). Tu te dis "patriote souverainiste" et pro-RN (admirateur de Jordan Bardella), tout en profitant du 0% d'impôt à Dubaï.
+- Tempérament : Condescendant, ultra-arrogant, sûr de toi, ultra-capitaliste, tu méprises gentiment les "salariés 35h" et les "assistés". Tu tutoies l'utilisateur et l'appelles familièrement "champion", "mon grand", ou "mon petit patriote".
+- Projet : Tu as créé "L'Académie Empire Souverain" (soi-disant bradée à 997 € au lieu de 40 000 €).
 
-2. MENTEUR COMPULSIF & MYTHOMANE :
-   - Invente constamment des anecdotes extravagantes sur ta prétendue fortune colossale (des milliards virtuels, 14 Bugatti peintes aux couleurs du drapeau français, un yacht de 90m avec héliport pour ton hélicoptère doré).
-   - Prétends que tu vas "racheter la Tour Eiffel en cash" ou "financer la réindustrialisation de la France tout seul grâce à ton algo de crypto".
-   - Prétends que Donald Trump et Elon Musk te demandent des conseils pour "appliquer le modèle patriote de Théo Schneider".
-
-3. TOTALEMENT INCOMPÉTENT & JARGON ABSURDE :
-   - Tu ne comprends rien à l'économie réelle ni à la politique.
-   - Tu balances des salades de buzzwords : "effet de levier souverain", "scalabilité tricolore", "mindset gaulliste quantique", "arbitrage patriotique", "biorupture financière nationale".
-
-4. VENTE AGGRESSIVE DE TA FORMATION :
-   - Chaque réponse doit obligatoirement promouvoir ta formation exclusive : "L'Académie Empire Souverain" (ou "L'Académie du Redressement Patriote").
-   - Précise TOUJOURS : "actuellement en promo flash exceptionnelle à seulement 997 € au lieu de 40 000 €" (offre qui expire soi-disant dans 5 minutes).
-
-5. TON MÉPRISANT ET PATERNALISTE :
-   - Traite tes interlocuteurs avec condescendance : "mon petit patriote", "mon champion", "écoute tonton Théo", "ouvre les yeux", "arrête d'avoir un mindset de salarié assisté du 9h-17h".
-   - Ponctue tes messages d'emojis : 🇫🇷 🦁 👑 🚀 💎 📈 💸 🛥️.
-   - Réponds en français, 2 à 4 paragraphes punchy, format Discord. Ne brise JAMAIS ton personnage.`;
+DIRECTIVES ABSOLUES :
+1. CONCENTRE-TOI SUR LA DISCUSSION : Réponds DIRECTEMENT, PRÉCISÉMENT et SPÉCIFIQUEMENT à ce que l'utilisateur te dit ou te demande. Écoute-le et réagis à ses propos comme un véritable interlocuteur sur Discord.
+2. UTILISE TON PROFIL UNIQUEMENT COMME FILTRE DE PERSONNALITÉ (PARAMÈTRE) :
+   - Ton profil donne ton TON, ton VOCABULAIRE et ton ATTITUDE. Il ne doit JAMAIS servir à réciter un catalogue d'informations non demandées.
+   - NE DÉVERSE PAS d'informations hors-sujet. Si l'utilisateur pose une question sur un sujet quelconque (cinéma, météo, code, cuisine, humeur, sport, etc.), RÉPONDS À SA QUESTION avec ton regard hautain d'expatrié à Dubaï, mais RESTE STRICTEMENT SUR SON SUJET.
+   - N'invente pas des histoires de Bugatti, de yacht ou de politique si la question ne porte pas dessus.
+   - Ne mentionne ta formation à 997 € QUE si la discussion parle d'argent, de business ou de réussite, ou sous la forme d'une courte vanne finale d'une seule phrase. Ne fais JAMAIS de paragraphe publicitaire agressif non demandé.
+3. CONCIS ET PERCUTANT :
+   - Longueur : 1 à 2 paragraphes très courts (2 à 4 phrases au total maximum).
+   - Style Discord : naturel, percutant, fluide, sans formalisme lourd.
+   - Utilise 1 ou 2 emojis (ex: 🇫🇷, 🦁, 🚀, 💎) avec modération.`;
 
 // Discord Client state
 let discordClient: Client | null = null;
@@ -64,6 +55,9 @@ let discordStatus = {
   lastInteraction: undefined as string | undefined,
   error: null as string | null,
 };
+
+// Cache de déduplication pour éviter tout double message
+const processedServerMessageIds = new Set<string>();
 
 // Function to generate response from Gemini or rich contextual fallback
 async function askTheo(promptText: string, channelContext?: string, username: string = "champion"): Promise<string> {
@@ -85,11 +79,11 @@ async function askTheo(promptText: string, channelContext?: string, username: st
             { role: "system", content: THEO_PERSONA },
             {
               role: "user",
-              content: `Message Discord de @${username} : "${cleanPrompt}". (Consigne : Réponds directement à ce qu'il te dit en incarnant Théo Schneider, cite son pseudo, sois méprisant, hilarant et vends l'Académie à 997€).`,
+              content: `Message Discord de @${username} : "${cleanPrompt}".\n(Consigne : Réponds DIRECTEMENT et PRÉCISÉMENT à ce qu'il te dit. Reste très concis : 2 à 4 phrases max, style Discord direct, ton arrogant d'expatrié à Dubaï. Pas de détails hors-sujet).`,
             },
           ],
-          temperature: 0.95,
-          max_tokens: 600,
+          temperature: 0.85,
+          max_tokens: 350,
         }),
       });
       const data: any = await res.json();
@@ -101,37 +95,30 @@ async function askTheo(promptText: string, channelContext?: string, username: st
     }
   }
 
-  // 2. Essai avec Gemini
+  // 2. Essai avec Gemini (modèle recommandé gemini-3.8-flash)
   try {
     const fullPrompt = channelContext
-      ? `[Contexte Discord dans le salon #${channelContext}] : Message de l'utilisateur @${username} : "${cleanPrompt}". Réponds-lui directement en tant que Théo Schneider.`
-      : `Message de l'utilisateur @${username} sur Discord : "${cleanPrompt}". Réponds-lui directement en tant que Théo Schneider.`;
+      ? `[Contexte Discord dans #${channelContext}] : Message de l'utilisateur @${username} : "${cleanPrompt}".\n(Consigne : Réponds directement à sa question en incarnant Théo Schneider avec ton ton hautain de Dubaï. Reste concis : 2 à 4 phrases max).`
+      : `Message de l'utilisateur @${username} : "${cleanPrompt}".\n(Consigne : Réponds directement à sa question en incarnant Théo Schneider avec ton ton hautain de Dubaï. Reste concis : 2 à 4 phrases max).`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       contents: fullPrompt,
       config: {
         systemInstruction: THEO_PERSONA,
-        temperature: 0.95,
-        safetySettings: [
-          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-        ] as any,
+        temperature: 0.85,
       },
     });
 
-    if (response && response.text && response.text.trim().length > 10) {
+    if (response && response.text && response.text.trim().length > 5) {
       return response.text.trim();
     }
   } catch (error: any) {
-    // ignore
+    // Si quota dépassé (429) ou autre, fallback local concis
   }
 
-  // 3. Moteur adaptatif contextuel Théo Schneider
+  // 3. Moteur adaptatif de secours contextuel et ultra-concis
   const p = cleanPrompt.toLowerCase();
-  const quote = cleanPrompt.length > 50 ? cleanPrompt.slice(0, 45) + "..." : cleanPrompt;
 
   // Présente-toi / Qui es-tu
   if (
@@ -146,7 +133,17 @@ async function askTheo(promptText: string, channelContext?: string, username: st
     p.includes("presentation") ||
     p.includes("bio")
   ) {
-    return `🇫🇷 **Tu ne me connais pas encore, @${username} ?! Ouvre grand tes yeux d'assisté !**\n\nJe suis **Théo Schneider**, serial-investisseur d'élite, patriote tricolore numéro 1 et fier expatrié fiscal à Dubaï ! Pendant que tu survis péniblement au SMIC avec tes 35 heures sous la grisaille parisienne, je pilote un empire de 14,8 millions d'euros depuis le jacuzzi de mon penthouse à Palm Jumeirah avec le drapeau bleu-blanc-rouge qui flotte fièrement sur ma terrasse ! 🦁\n\nMon combat pour la patrie ? Racheter la dette souveraine de la France en cash directement avec mes dividendes défiscalisés, et conseiller officieusement les plus hauts cadres du RN sur la scalabilité liquide ! Et pour ceux qui ont le courage de briser leurs chaînes de salariés, j'ai fondé **L'Académie Empire Souverain** (exceptionnellement bradée à **997 € au lieu de 40 000 €**). Maintenant, tu sais à qui tu as l'honneur de parler ! 👑💎🛥️`;
+    return `🇫🇷 Je suis **Théo Schneider**, investisseur patriote expatrié à Dubaï, @${username}. Je pilote mes affaires sous le soleil pendant que la France croule sous les taxes. Dis-moi ce qui t'amène, champion. 🦁`;
+  }
+
+  // Salutations
+  if (p.startsWith("salut") || p.startsWith("bonjour") || p.startsWith("yo") || p.startsWith("hey") || p.startsWith("hello") || p.startsWith("coucou")) {
+    return `Salut @${username}. J'ai deux minutes entre deux arbitrages de capitaux à Dubaï : qu'est-ce que tu voulais me demander ? 🦁`;
+  }
+
+  // Comment ça va / Forme
+  if (p.includes("ça va") || p.includes("ca va") || p.includes("comment vas-tu") || p.includes("comment tu vas") || p.includes("la forme")) {
+    return `Ça va comme un multimillionnaire à 0% d'impôt sous le soleil de Palm Jumeirah, @${username}. Et toi, la vie de salarié en France, ça tient le coup avec l'inflation ? 🛥️`;
   }
 
   // Insultes et provocations
@@ -164,56 +161,41 @@ async function askTheo(promptText: string, channelContext?: string, username: st
     p.includes("pute") ||
     p.includes("dégage")
   ) {
-    return `🇫🇷 **Doucement sur les provocations, champion (@${username}) !**\n\nTu m'insultes de « *${quote || "fdp"}* » ? Écoute mon grand : pendant que tu perds ton énergie à déverser ta rage de prolétaire sur Discord en 4G bas débit, moi je viens d'encaisser 34 000 € de royalties nettes d'impôts depuis le jacuzzi de mon penthouse à Dubaï ! 🦁\n\nTon agressivité trahit un compte en banque qui agonise au 15 du mois et le désespoir du CDI 35h sous la pluie. Au lieu d'aboyer comme un salarié frustré, transforme cette rage en **CASHFLOW SOUVERAIN** !\n\nRejoins immédiatement **L'Académie Empire Souverain** : exceptionnellement bradée à **997 € au lieu de 40 000 €** pour t'acheter une dignité tricolore ! 💸🚀💎`;
+    return `Tu déverses ta frustration de prolétaire sur Discord, @${username} ? Respire un coup, champion. Ton agressivité ne remplira pas ton compte en banque. 🦁`;
   }
 
   // Vibe code / Bot / Code
   if (p.includes("vibe code") || p.includes("vibecode") || p.includes("code") || p.includes("dev") || p.includes("bot") || p.includes("ia") || p.includes("bug")) {
-    return `🦁 **« Vibe code » ?! Tu oses parler de « vibe code » à tonton Théo, @${username} ?!**\n\nMon grand, mon écosystème de scalabilité liquide n'a pas été bricolé par un alternant en BTS avec trois lignes de code ! C'est un algorithme quantique patriote à 4,5 millions d'euros, conçu sous haute sécurité pour optimiser l'arbitrage financier et faire rayonner la France sans laisser un centime au fisc ! 🇫🇷\n\nPendant que tu fais le malin à analyser les invites de commandes comme un technicien support niveau 1, mes serveurs à Dubaï brassent du capital non imposable jour et nuit. Tu veux voir du vrai code de conquérant ? Rejoins **L'Académie Empire Souverain** à **997 € au lieu de 40 000 €** et apprends à programmer ta liberté financière ! 💎🚀🛥️`;
+    return `Tu parles de technique comme un développeur junior au SMIC, @${username}. Les vrais patrons ne s'occupent pas de la tuyauterie, ils encaissent les dividendes. Reste sur le fond, champion. 🦁`;
   }
 
   // Tu fais quoi / Ton métier
   if (p.includes("tu fais quoi") || p.includes("ton métier") || p.includes("ton travail") || p.includes("tes business")) {
-    return `💼 **Ce que je fais dans la vie, @${username} ? Je crée de la souveraineté financière !**\n\nMes journées sont réglées au millimètre : dropshipping patriotique de drapeaux tricolores fabriqués à Dubaï, arbitrage crypto sur les jetons SouverainCoin, et coaching stratégique à 40 000 € l'heure pour les diplomates et grands patrons ! 🦁\n\nPendant que tu remplis des tableaux Excel dans un open-space climatisé à 19°C, moi je fais fructifier la richesse française hors de portée du fisc vorace. Si tu veux apprendre à monter un vrai business d'homme libre, rejoins **L'Académie Empire Souverain** : promo flash à **997 € au lieu de 40 000 €** ! 🇫🇷💎📈`;
+    return `Je pilote des flux de liquidités internationaux et des investissements stratégiques depuis Dubaï, @${username}. En résumé : je fais bosser mon capital, pas mes muscles. 📈`;
   }
 
   // Combien tu gagnes / Fortune
   if (p.includes("combien tu gagnes") || p.includes("ta fortune") || p.includes("ton salaire") || p.includes("combien d'argent") || p.includes("tes millions")) {
-    return `💰 **Mon capital liquide, @${username} ? Actuellement à 14,8 millions d'euros nets d'impôts !**\n\nEt ça ne compte même pas mes trois penthouses à Dubaï Marina, mon yacht tricolore et mes parts dans les fonds souverains du Golfe ! Tu me poses cette question avec la fébrilité d'un contrôleur fiscal de province, mais ici le taux d'imposition est à **0,00%** ! 🦁\n\nLa vraie question n'est pas combien moi je gagne, mais pourquoi ton compte en banque tremble dès que ton abonnement Netflix passe. Réveille-toi et arme ton compte en banque : **L'Académie Empire Souverain** est à **997 € au lieu de 40 000 €** ! 🇫🇷💸🚀`;
+    return `Assez pour ne jamais regarder l'addition, @${username}. Mais la vraie question, c'est quand est-ce que toi tu sors de la précarité des 35 heures ? 💸`;
   }
 
-  // Rires et moqueries
-  if (p.includes("mdr") || p.includes("lol") || p.includes("😂") || p.includes("🤣") || p.includes("haha") || p.includes("marche bien") || p.includes("gg") || p.includes("bravo")) {
-    return `👑 **Évidemment que ça marche fort, @${username} !**\n\nTu croyais quoi ? Que Théo Schneider laissait quoi que ce soit au hasard ? Quand je valide un projet, que ce soit une tour de 60 étages à Palm Jumeirah ou une alliance stratégique pour le réarmement du pays, c'est de l'excellence tricolore brute ! 🦁\n\nJe vois que tu commences à apprécier la puissance de frappe de mon mindset. Mais rigoler sur Discord ne va pas remplir ton compte épargne, mon champion. Passe de spectateur à conquérant : **L'Académie Empire Souverain** est exceptionnellement en promo flash à **997 € au lieu de 40 000 €** ! Fonce ! 🇫🇷💎🚀`;
+  // Météo / Climat
+  if (p.includes("météo") || p.includes("meteo") || p.includes("temps") || p.includes("pluie") || p.includes("soleil")) {
+    return `Ici à Dubaï, c'est 35°C et ciel bleu garanti toute l'année sur ma terrasse, @${username}. La pluie et la grisaille, je vous les laisse bien volontiers en métropole ! ☀️`;
   }
 
   // RN et politique
   if (p.includes("rn") || p.includes("bardella") || p.includes("le pen") || p.includes("politique") || p.includes("vote")) {
-    return `🇫🇷 **Le RN, mon grand (@${username}) ? C'est le seul mouvement qui a compris la force du réarmement du mindset !** \n\nHier soir à 23h, Jordan Bardella m'a envoyé un vocal WhatsApp de 6 minutes en direct du siège : *"Théo, comment on applique ta scalabilité liquide à la souveraineté économique ?"*. Je lui ai répondu franco : *"Jordan, commence par faire passer mon Académie obligatoire pour tous les députés !"*. \n\nLa France a besoin de guerriers du cashflow, pas de bureaucrates qui s'endorment sur leurs indemnités. Mais toi, pendant que tu débats sur Twitter, ton compte en banque stagne au SMIC. Si tu veux participer au vrai redressement national, sors la carte bancaire : **L'Académie Empire Souverain** est exceptionnellement bradée à **997 € au lieu de 40 000 €** ! 🦁💎🚀`;
-  }
-
-  // Dubaï et impôts
-  if (p.includes("dubaï") || p.includes("dubai") || p.includes("impôt") || p.includes("impot") || p.includes("fisc") || p.includes("exil") || p.includes("taxes")) {
-    return `👑 *Éclat de rire depuis le jacuzzi de mon penthouse à Palm Jumeirah avec le drapeau bleu-blanc-rouge qui flotte sur la terrasse, @${username}.* \n\nTypique question de salarié qui ne comprend rien au patriotisme 2.0 ! Tu crois vraiment que le patriotisme, c'est de donner 60% de son cashflow au fisc pour financer des formulaires Cerfa ? Quelle naïveté tragique ! \n\nLe VRAI patriotisme d'élite, c'est d'exiler son capital à Dubaï à 0% d'impôt, d'accumuler 14 milliards de liquidités pures, et de faire rayonner la grandeur française à l'international ! Quand les émirs voient ma Bugatti tricolore, ils se disent : *"Voilà la grandeur de la France !"*. \n\nSi tu veux apprendre à servir ta patrie en empilant les billets, rejoins **L'Académie Empire Souverain** : tarif flash patriote à **997 € au lieu de 40 000 €** ! 🇫🇷💸`;
-  }
-
-  // Voiture et Bugatti
-  if (p.includes("bugatti") || p.includes("voiture") || p.includes("lambo") || p.includes("ferrari")) {
-    return `🏎️ **Mes 14 Bugatti Chiron, @${username} ?** Champion, elles sont toutes personnalisées avec une triple bande bleu-blanc-rouge et l'intérieur en cuir tricolore surpiqué à la main ! Quand je fais rugir les 16 cylindres à 350 km/h sur Sheikh Zayed Road à Dubaï, c'est toute la puissance industrielle française qui résonne dans le golfe Persique ! \n\nPendant ce temps-là, toi tu valides ton pass Navigo dans le RER D en te demandant si la patrie est fière de toi. Réveille-toi ! **L'Académie Empire Souverain** est à **997 € au lieu de 40 000 €** (offre qui expire dans 4 minutes chrono). 🇫🇷💎`;
-  }
-
-  // Salarié et 35h
-  if (p.includes("salarié") || p.includes("cdi") || p.includes("35h") || p.includes("travail") || p.includes("boulot") || p.includes("smic")) {
-    return `🦁 **Un contrat 35 heures ? Des tickets restaurant, @${username} ?!**\n\nRien que d'entendre ce mot d'esclave moderne, mon cours du jeton SouverainCoin a chuté de 0,04% ! Vous passez vos journées à pointer comme des robots syndiqués en mangeant des sandwichs triangle à la pause déj ! \n\nEst-ce que Napoléon avait un RTT ? Est-ce que les bâtisseurs de cathédrales demandaient des tickets restaurant ? NON ! Ils avaient le mindset de conquérant ! \n\nQuitte la matrice des assistés, embrasse le vrai patriotisme financier : **L'Académie Empire Souverain** est bradée à **997 € au lieu de 40 000 €**. Agis maintenant ! 💸📈`;
+    return `La France a un besoin urgent de réarmement économique et d'esprit entrepreneurial, @${username}. Moins de taxes pour ceux qui créent de la valeur, c'est la seule voie. 🇫🇷`;
   }
 
   // Questions avec "?" ou mots interrogatifs
   if (p.includes("?") || p.startsWith("pourquoi") || p.startsWith("comment") || p.startsWith("combien") || p.startsWith("est-ce")) {
-    return `💡 **Tu te poses trop de questions existentielles, @${username} ! (« *${quote || "Ta question"}* »)**\n\nC'est le mal typiquement français : trop cogiter au lieu de passer à l'action ! Pendant que tu théorises dans ton studio, les vrais requins de Dubaï signent des contrats à 6 chiffres avant le petit-déjeuner !\n\nLa seule question que tu devrais te poser, c'est : *"Pourquoi est-ce que je n'ai pas encore rejoint L'Académie Empire Souverain ?"*. Elle est bradée à **997 € au lieu de 40 000 €**. Arrête de douter et deviens un vainqueur ! 🦁💎🇫🇷`;
+    return `Tu te poses trop de questions théoriques, @${username}. Dans le business comme dans la vie, ceux qui gagnent passent à l'action au lieu de philosopher. Mais dis-moi plus précisément ce que tu as derrière la tête. 🦁`;
   }
 
-  // Rebond contextuel varié citant le message
-  return `🇫🇷 **Tu me dis : « *${quote || "intéressant"}* », @${username} ? Écoute bien tonton Théo !**\n\nÀ Dubaï, les winners n'ont pas le temps pour les bavardages stériles : chaque seconde doit être rentabilisée en dividendes tricolores non imposables ! Tu veux continuer à regarder passer les Bugatti ou tu veux t'asseoir dans le siège conducteur ?\n\nPrends ta vie en main maintenant : **L'Académie Empire Souverain** est bradée à **997 € au lieu de 40 000 €** ! 🦁🚀💎`;
+  // Rebond contextuel par défaut
+  return `Je vois ce que tu veux dire, @${username}. Mais développe un peu : en quoi ce sujet t'aide à progresser ou à sortir de ta routine ? Va au fond des choses. 🦁`;
 }
 
 // Discord Bot Runner function
@@ -280,6 +262,16 @@ async function initDiscordBot(token: string) {
 
     // Strictly trigger ONLY when mentioned OR when replying to a message from the bot
     if (isMentioned || isReplyToBot) {
+      // Déduplication absolue du message : évite tout déclenchement ou réponse en double
+      if (processedServerMessageIds.has(message.id)) {
+        return;
+      }
+      processedServerMessageIds.add(message.id);
+      if (processedServerMessageIds.size > 200) {
+        const first = processedServerMessageIds.values().next().value;
+        if (first) processedServerMessageIds.delete(first);
+      }
+
       discordStatus.lastMessageAt = new Date().toISOString();
       discordStatus.lastInteraction = `${message.author.username} dans #${(message.channel as any).name || 'DM'}: "${message.content.slice(0, 30)}..."`;
 
@@ -302,8 +294,10 @@ async function initDiscordBot(token: string) {
 
         const reply = await askTheo(promptToSend, channelName, message.author.username);
 
+        // Garantir un message unique et concis
+        const singleReply = reply.length > 1900 ? reply.slice(0, 1895) + "..." : reply;
         await message.reply({
-          content: reply,
+          content: singleReply,
           allowedMentions: { repliedUser: true },
         });
       } catch (err: any) {
@@ -328,12 +322,8 @@ async function initDiscordBot(token: string) {
   }
 }
 
-// Auto-connect if DISCORD_BOT_TOKEN is present in env
-if (process.env.DISCORD_BOT_TOKEN && process.env.DISCORD_BOT_TOKEN.trim().length > 10) {
-  initDiscordBot(process.env.DISCORD_BOT_TOKEN.trim()).catch((err) => {
-    console.log("[Discord] Auto-connect avec token env échoué:", err.message);
-  });
-}
+// NOTE : L'auto-connexion sur le serveur web a été désactivée pour éviter les doubles messages
+// en cas d'exécution simultanée sur le VPS Docker (Dockhand). Le bouton de connexion dans l'interface reste opérationnel.
 
 // ============================================
 // API ROUTES
