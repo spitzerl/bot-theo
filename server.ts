@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import dotenv from "dotenv";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
@@ -89,6 +90,33 @@ async function askTheo(promptText: string, channelContext?: string): Promise<str
 
   // Dynamic contextual Théo Schneider generator for instant resilience
   const p = promptText.toLowerCase();
+
+  // Insultes et provocations
+  if (
+    p.includes("fdp") ||
+    p.includes("tg") ||
+    p.includes("merde") ||
+    p.includes("connard") ||
+    p.includes("salaud") ||
+    p.includes("clochard") ||
+    p.includes("tocard") ||
+    p.includes("bouffon") ||
+    p.includes("nique") ||
+    p.includes("pute") ||
+    p.includes("dégage")
+  ) {
+    return `🇫🇷 **Doucement sur les provocations, champion !**\n\nTu m'insultes ? Écoute mon grand : pendant que tu perds ton temps à déverser ta rage de prolétaire sur Discord avec ta 4G bas débit, moi je viens d'encaisser 34 000 € de royalties nettes d'impôts depuis le jacuzzi de mon penthouse à Dubaï ! 🦁\n\nTon agressivité trahit un compte en banque qui agonise au 15 du mois et le désespoir du CDI 35h sous la pluie. Au lieu d'aboyer comme un salarié frustré, transforme cette rage en **CASHFLOW SOUVERAIN** !\n\nRejoins immédiatement **L'Académie Empire Souverain** : exceptionnellement bradée à **997 € au lieu de 40 000 €** pour t'acheter une dignité tricolore ! 💸🚀💎`;
+  }
+
+  // Vibe code / Bot / Code
+  if (p.includes("vibe code") || p.includes("vibecode") || p.includes("code") || p.includes("dev") || p.includes("bot") || p.includes("ia") || p.includes("bug")) {
+    return `🦁 **« Vibe code » ?! Tu oses parler de « vibe code » à tonton Théo ?!**\n\nMon grand, mon écosystème de scalabilité liquide n'a pas été bricolé par un alternant en BTS avec trois lignes de code ! C'est un algorithme quantique patriote à 4,5 millions d'euros, conçu sous haute sécurité pour optimiser l'arbitrage financier et faire rayonner la France sans laisser un centime au fisc ! 🇫🇷\n\nPendant que tu fais le malin à analyser les invites de commandes comme un technicien support niveau 1, mes serveurs à Dubaï brassent du capital non imposable jour et nuit. Tu veux voir du vrai code de conquérant ? Rejoins **L'Académie Empire Souverain** à **997 € au lieu de 40 000 €** et apprends à programmer ta liberté financière ! 💎🚀🛥️`;
+  }
+
+  // Rires et moqueries
+  if (p.includes("mdr") || p.includes("lol") || p.includes("😂") || p.includes("🤣") || p.includes("haha") || p.includes("marche bien") || p.includes("gg") || p.includes("bravo")) {
+    return `👑 **Évidemment que ça marche fort !**\n\nTu croyais quoi ? Que Théo Schneider laissait quoi que ce soit au hasard ? Quand je valide un projet, que ce soit une tour de 60 étages à Palm Jumeirah ou une alliance stratégique pour le réarmement du pays, c'est de l'excellence tricolore brute ! 🦁\n\nJe vois que tu commences à apprécier la puissance de frappe de mon mindset. Mais rigoler sur Discord ne va pas remplir ton compte épargne, mon champion. Passe de spectateur à conquérant : **L'Académie Empire Souverain** est exceptionnellement en promo flash à **997 € au lieu de 40 000 €** ! Fonce ! 🇫🇷💎🚀`;
+  }
 
   if (p.includes("rn") || p.includes("bardella") || p.includes("le pen") || p.includes("politique") || p.includes("vote")) {
     return `🇫🇷 **Le RN, mon grand ? C'est le seul mouvement qui a compris la force du réarmement du mindset !** \n\nHier soir à 23h, Jordan Bardella m'a envoyé un vocal WhatsApp de 6 minutes en direct du siège : *"Théo, comment on applique ta scalabilité liquide à la souveraineté économique ?"*. Je lui ai répondu franco : *"Jordan, commence par faire passer mon Académie obligatoire pour tous les députés !"*. \n\nLa France a besoin de guerriers du cashflow, pas de bureaucrates qui s'endorment sur leurs indemnités. Mais toi, pendant que tu débats sur Twitter, ton compte en banque stagne au SMIC. Si tu veux participer au vrai redressement national, sors la carte bancaire : **L'Académie Empire Souverain** est exceptionnellement bradée à **997 € au lieu de 40 000 €** ! 🦁💎🚀`;
@@ -333,105 +361,12 @@ app.post("/api/bot/disconnect", (req, res) => {
 
 // Export standalone bot files for self-hosting
 app.get("/api/bot/export", (req, res) => {
-  const botJs = `// ==========================================================
-// BOT DISCORD : Théo Schneider (Patriote RN Exilé à Dubaï & Vendeur)
-// ==========================================================
-import { Client, GatewayIntentBits, Partials, ActivityType } from "discord.js";
-import { GoogleGenAI } from "@google/genai";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
-
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.DirectMessages,
-  ],
-  partials: [Partials.Channel],
-});
-
-const THEO_PERSONA = \`${THEO_PERSONA.replace(/`/g, "\\`")}\`;
-
-client.on("ready", () => {
-  console.log(\`🇫🇷 Théo Schneider est en ligne en tant que \${client.user.tag} !\`);
-  client.user.setPresence({
-    activities: [{ name: "L'Académie Empire Souverain (997€)", type: ActivityType.Playing }],
-    status: "dnd",
-  });
-});
-
-client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
-
-  const botUser = client.user;
-  if (!botUser) return;
-
-  // 1. Mention directe (@Théo Schneider)
-  const isMentioned = message.mentions.has(botUser) || message.mentions.users.has(botUser.id);
-
-  // 2. Réponse directe à un message envoyé par le bot (fonction "Répondre" de Discord)
-  let isReplyToBot = false;
-  let referencedContent = "";
-  if (message.reference?.messageId) {
-    try {
-      const referencedMessage = await message.channel.messages.fetch(message.reference.messageId).catch(() => null);
-      if (referencedMessage && referencedMessage.author.id === botUser.id) {
-        isReplyToBot = true;
-        referencedContent = referencedMessage.content;
-      }
-    } catch (e) {
-      if (message.mentions.repliedUser?.id === botUser.id) {
-        isReplyToBot = true;
-      }
-    }
+  let botJs = "";
+  try {
+    botJs = fs.readFileSync(path.join(process.cwd(), "bot-docker", "bot.js"), "utf-8");
+  } catch {
+    botJs = "// Fichier bot.js non trouvé";
   }
-
-  // Ne répond STRICTEMENT que si mentionné OU en réponse à un de ses messages
-  if (isMentioned || isReplyToBot) {
-    try {
-      if ('sendTyping' in message.channel) {
-        await message.channel.sendTyping();
-      }
-
-      const cleanContent = message.content.replace(new RegExp(\`<@!?\${botUser.id}>\`, "g"), "").trim();
-      
-      let userPrompt = cleanContent;
-      if (isReplyToBot && referencedContent) {
-        userPrompt = \`[En réponse à ton message précédent : "\${referencedContent}"]\\n[Message de \${message.author.username}] : "\${cleanContent || "Alors ?"}"\`;
-      } else if (!userPrompt) {
-        userPrompt = "Théo, donne-nous un conseil pour redresser la France.";
-      }
-
-      const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
-        contents: \`[Discord Message de \${message.author.username}] : "\${userPrompt}"\`,
-        config: {
-          systemInstruction: THEO_PERSONA,
-          temperature: 0.95,
-        },
-      });
-
-      const reply = response.text || "Écoute champion, rejoins mon Académie Empire Souverain à 997 € au lieu de 40 000 € pour la grandeur de la patrie ! 🇫🇷💎";
-
-      await message.reply({
-        content: reply,
-        allowedMentions: { repliedUser: true },
-      });
-    } catch (error) {
-      console.error("Erreur:", error);
-      message.reply("🇫🇷 Écoute mon grand, mon satellite tricolore privé au-dessus de Dubaï a une micro-interférence. Mais l'Académie Empire Souverain à 997€ reste ouverte pour sauver ton compte en banque ! 🚀");
-    }
-  }
-});
-
-client.login(process.env.DISCORD_BOT_TOKEN);
-`;
 
   const packageJson = `{
   "name": "theo-schneider-discord-bot",
